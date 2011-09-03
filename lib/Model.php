@@ -1065,6 +1065,16 @@ class Model
 	{
 		return empty($this->__dirty) ? false : true;
 	}
+	
+	/**
+	 * Returns true if the attribute has been modified.
+	 * 
+	 * @return boolean true if modified, false otherwise
+	 */
+	public function is_dirty_attribute($name)
+	{
+		return isset($this->__dirty[$name]) ? $this->__dirty[$name] : false;
+	}
 
 	/**
 	 * Run validations on model and returns whether or not model passed validation.

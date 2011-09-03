@@ -54,7 +54,8 @@ class Validations
 		'validates_exclusion_of',
 		'validates_format_of',
 		'validates_numericality_of',
-		'validates_uniqueness_of'
+		'validates_uniqueness_of',
+		'validates_confirmation_of'
 	);
 
 	private static $DEFAULT_VALIDATION_OPTIONS = array(
@@ -175,11 +176,13 @@ class Validations
 	public function validates_presence_of($attrs)
 	{
 		$configuration = array_merge(self::$DEFAULT_VALIDATION_OPTIONS, array('message' => Errors::$DEFAULT_ERROR_MESSAGES['blank'], 'on' => 'save'));
-
+		
 		foreach ($attrs as $attr)
 		{
 			$options = array_merge($configuration, $attr);
-			$this->record->add_on_blank($options[0], $options['message']);
+			
+			if($this->is_validation_needed($options))
+				$this->record->add_on_blank($options[0], $options['message']);
 		}
 	}
 
@@ -254,6 +257,10 @@ class Validations
 		foreach ($attrs as $attr)
 		{
 			$options = array_merge($configuration, $attr);
+			
+			if(! $this->is_validation_needed($options))
+				continue;
+			
 			$attribute = $options[0];
 			$var = $this->model->$attribute;
 
@@ -313,6 +320,10 @@ class Validations
 		foreach ($attrs as $attr)
 		{
 			$options = array_merge($configuration, $attr);
+			
+			if(! $this->is_validation_needed($options))
+				continue;
+			
 			$attribute = $options[0];
 			$var = $this->model->$attribute;
 
@@ -419,6 +430,10 @@ class Validations
 		foreach ($attrs as $attr)
 		{
 			$options = array_merge($configuration, $attr);
+			
+			if(! $this->is_validation_needed($options))
+				continue;
+			
 			$attribute = $options[0];
 			$var = $this->model->$attribute;
 
@@ -470,6 +485,10 @@ class Validations
 		foreach ($attrs as $attr)
 		{
 			$options = array_merge($configuration, $attr);
+			
+			if(! $this->is_validation_needed($options))
+				continue;
+			
 			$range_options = array_intersect(array_keys(self::$ALL_RANGE_OPTIONS), array_keys($attr));
 			sort($range_options);
 
@@ -607,6 +626,29 @@ class Validations
 				$this->record->add($add_record, $options['message']);
 		}
 	}
+	
+	public function validates_confirmation_of($attrs)
+	{
+		$configuration = array_merge(self::$DEFAULT_VALIDATION_OPTIONS,
+				array('message' => Errors::$DEFAULT_ERROR_MESSAGES['misstyped'], 'on' => 'save'));
+		
+		foreach($attrs as $attr)
+		{
+			$options = array_merge($configuration, $attr);
+			
+			if(! $this->is_validation_needed($options))
+				continue;
+			
+			$attribute = $options[0];
+			$value = $this->model->$attribute;
+			
+			$attribute_confirmation = $attribute . '_confirmation';
+			$value_confirmation = $this->model->$attribute_confirmation;
+			
+			if($value != $value_confirmation)
+				$this->record->add($attribute_confirmation, $options['message']);
+		}
+	}
 
 	private function is_null_with_option($var, &$options)
 	{
@@ -616,6 +658,40 @@ class Validations
 	private function is_blank_with_option($var, &$options)
 	{
 		return (Utils::is_blank($var) && (isset($options['allow_blank']) && $options['allow_blank']));
+	}
+	
+	/**
+	 * Returns true if the validation is needed, false otherwise
+	 * 
+	 * @param type $options Validation options
+	 * @return boolean True if needed, false otherwise
+	 */
+	private function is_validation_needed($options)
+	{
+		$validation_on = $options['on'];
+		
+		switch($validation_on)
+		{
+			case 'save':
+				return true;
+				break;
+			
+			case 'create':
+				return $this->model->is_new_record();
+				break;
+			
+			case 'update':
+				return !$this->model->is_new_record();
+				break;
+			
+			case 'dirty':
+				$validation_attribute = $options[0];
+				return $this->model->is_dirty_attribute($validation_attribute);
+				break;
+			
+			default:
+				return true;
+		}
 	}
 }
 
@@ -649,7 +725,8 @@ class Errors implements IteratorAggregate
 		'even'         => "must be even",
 		'unique'       => "must be unique",
 		'less_than_or_equal_to' => "must be less than or equal to %d",
-		'greater_than_or_equal_to' => "must be greater than or equal to %d"
+		'greater_than_or_equal_to' => "must be greater than or equal to %d",
+		'misstyped'    =>  'does not match'
 	);
 
 	/**
@@ -829,7 +906,7 @@ class Errors implements IteratorAggregate
 					if (is_null($msg))
 						continue;
 
-					$errors[$attribute][] = ($message = Utils::human_attribute($attribute) . ' ' . $msg);
+					$errors[$attribute][] = ($message = $msg);
 
 					if ($closure)
 						$closure($attribute,$message);

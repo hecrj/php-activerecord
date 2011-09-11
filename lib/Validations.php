@@ -686,7 +686,7 @@ class Validations
 			
 			case 'dirty':
 				$validation_attribute = $options[0];
-				return $this->model->is_dirty_attribute($validation_attribute);
+				return $this->model->attribute_is_dirty($validation_attribute);
 				break;
 			
 			default:

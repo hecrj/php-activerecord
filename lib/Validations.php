@@ -640,12 +640,9 @@ class Validations
 				continue;
 			
 			$attribute = $options[0];
-			$value = $this->model->$attribute;
-			
 			$attribute_confirmation = $attribute . '_confirmation';
-			$value_confirmation = $this->model->$attribute_confirmation;
 			
-			if($value != $value_confirmation)
+			if($this->model->$attribute != $this->model->$attribute_confirmation)
 				$this->record->add($attribute_confirmation, $options['message']);
 		}
 	}

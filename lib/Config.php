@@ -78,6 +78,13 @@ class Config extends Singleton
 	 * @var string
 	 */
 	private $date_format = \DateTime::ISO8601;
+	
+	/**
+	 * The default error messages for validation.
+	 * 
+	 * @var array
+	 */
+	private $error_messages = array();
 
 	/**
 	 * Allows config initialization using a closure.
@@ -299,6 +306,16 @@ class Config extends Singleton
 	public function set_cache($url, $options=array())
 	{
 		Cache::initialize($url,$options);
+	}
+	
+	public function set_error_messages(Array $error_messages)
+	{
+		$this->error_messages = $error_messages;
+	}
+	
+	public function get_error_messages()
+	{
+		return $this->error_messages;
 	}
 };
 ?>

@@ -205,7 +205,14 @@ class Model
 	 * @var array
 	 */
 	static $attr_protected = array();
-
+	
+	/**
+	 * Hash of attribute names.
+	 * 
+	 * @var array
+	 */
+	static $attr_names = array();
+	
 	/**
 	 * Delegates calls to a relationship.
 	 *

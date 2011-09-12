@@ -529,7 +529,20 @@ class Validations
 					throw new  ValidationsArgumentError("$range_option value cannot use a float for length.");
 
 				if (!($range_option == 'maximum' && is_null($this->model->$attribute)))
-				{
+				{	
+					$attribute_value = $this->model->$attribute;
+					$len = mb_strlen($attribute_value, 'utf8');
+					$value = (int)$attr[$range_option];
+					
+					if ('maximum' == $range_option && $len <= $value)
+						continue;
+
+					elseif ('minimum' == $range_option && $len >= $value)
+						continue;
+
+					elseif ('is' == $range_option && $len === $value)
+						continue;
+					
 					$messageOptions = array('is' => 'wrong_length', 'minimum' => 'too_short', 'maximum' => 'too_long');
 
 					if (isset($options['message']))
@@ -537,20 +550,11 @@ class Validations
 					else
 						$message = $options[$messageOptions[$range_option]];
 					
-
+					$message = str_replace('%d+1', $option+1, $message);
+					$message = str_replace('%d-1', $option-1, $message);
 					$message = str_replace('%d', $option, $message);
-					$attribute_value = $this->model->$attribute;
-					$len = strlen($attribute_value);
-					$value = (int)$attr[$range_option];
-
-					if ('maximum' == $range_option && $len > $value)
-						$this->record->add($attribute, $message);
-
-					if ('minimum' == $range_option && $len < $value)
-						$this->record->add($attribute, $message);
-
-					if ('is' == $range_option && $len !== $value)
-						$this->record->add($attribute, $message);
+					
+					$this->record->add($attribute, $message);
 				}
 			}
 		}
@@ -700,6 +704,7 @@ class Validations
 class Errors implements IteratorAggregate
 {
 	private $model;
+	private $modelName;
 	private $errors;
 
 	public static $DEFAULT_ERROR_MESSAGES = array(
@@ -735,6 +740,12 @@ class Errors implements IteratorAggregate
 	public function __construct(Model $model)
 	{
 		$this->model = $model;
+		$this->modelName = get_class($model);
+		$cfg = Config::instance();
+		$error_messages = $cfg->get_error_messages();
+		
+		if(!empty($error_messages))
+			static::$DEFAULT_ERROR_MESSAGES = $error_messages;
 	}
 
 	/**
@@ -893,6 +904,7 @@ class Errors implements IteratorAggregate
 	public function to_array($closure=null)
 	{
 		$errors = array();
+		$model = $this->modelName;
 
 		if ($this->errors)
 		{
@@ -902,8 +914,15 @@ class Errors implements IteratorAggregate
 				{
 					if (is_null($msg))
 						continue;
-
-					$errors[$attribute][] = ($message = $msg);
+					
+					if(isset($model::$attr_names[$attribute]))
+						$message = $model::$attr_names[$attribute];
+					else
+						$message = Utils::human_attribute($attribute);
+					
+					$message .= ' '. $msg .'.';
+					
+					$errors[$attribute][] = $message;
 
 					if ($closure)
 						$closure($attribute,$message);

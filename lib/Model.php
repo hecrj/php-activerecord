@@ -443,9 +443,16 @@ class Model
 	public function assign_attribute($name, $value)
 	{
 		$table = static::table();
-
-		if (array_key_exists($name,$table->columns) && !is_object($value))
-			$value = $table->columns[$name]->cast($value,static::connection());
+		if (!is_object($value)) {
+			if (array_key_exists($name, $table->columns)) {
+				$value = $table->columns[$name]->cast($value, static::connection());
+			} else {
+				$col = $table->get_column_by_inflected_name($name);
+				if (!is_null($col)){
+					$value = $col->cast($value, static::connection());
+				}
+			}
+		}
 
 		// convert php's \DateTime to ours
 		if ($value instanceof \DateTime)
@@ -1411,7 +1418,7 @@ class Model
 		$options = static::extract_and_validate_options($args);
 		$options['select'] = 'COUNT(*)';
 
-		if (!empty($args))
+		if (!empty($args) && !is_null($args[0]) && !empty($args[0]))
 		{
 			if (is_hash($args[0]))
 				$options['conditions'] = $args[0];

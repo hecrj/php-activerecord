@@ -61,7 +61,7 @@ class ActiveRecordFindTest extends DatabaseTest
 	}
 
 	/**
-	 * @expectedException Exception
+	 * @expectedException ActiveRecord\RecordNotFound
 	 */
 	public function test_find_nothing_with_sql_in_string()
 	{
@@ -224,6 +224,13 @@ class ActiveRecordFindTest extends DatabaseTest
 		$this->assert_equals(0,Author::count(array('conditions' => 'author_id=99999999999999')));
 		$this->assert_equals(2,Author::count(array('conditions' => 'author_id=1 or author_id=2')));
 		$this->assert_equals(1,Author::count(array('name' => 'Tito', 'author_id' => 1)));
+	}
+
+	public function test_gh149_empty_count()
+	{
+		$total = Author::count();
+		$this->assert_equals($total, Author::count(null));
+		$this->assert_equals($total, Author::count(array()));
 	}
 
 	public function test_exists()

@@ -765,8 +765,15 @@ class Errors implements IteratorAggregate
 	 */
 	public function add($attribute, $msg)
 	{
+		$model = $this->modelName;
+
 		if (is_null($msg))
 			$msg = self :: $DEFAULT_ERROR_MESSAGES['invalid'];
+
+		if(isset($model::$attr_names[$attribute]))
+			$msg = $model::$attr_names[$attribute] .' '. $msg;
+		else
+			$msg = Utils::human_attribute($attribute) .' '. $msg;
 
 		if (!isset($this->errors[$attribute]))
 			$this->errors[$attribute] = array($msg);
@@ -839,7 +846,7 @@ class Errors implements IteratorAggregate
 	{
 		$errors = $this->$attribute;
 
-		return $errors && count($errors) == 1 ? $errors[0] : $errors;
+		return $errors;
 	}
 
 	/**
@@ -915,12 +922,7 @@ class Errors implements IteratorAggregate
 					if (is_null($msg))
 						continue;
 					
-					if(isset($model::$attr_names[$attribute]))
-						$message = $model::$attr_names[$attribute];
-					else
-						$message = Utils::human_attribute($attribute);
-					
-					$message .= ' '. $msg .'.';
+					$message = $msg .'.';
 					
 					$errors[$attribute][] = $message;
 
